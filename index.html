@@ -6,17 +6,17 @@
         <meta charset="utf-8" />
     </head>
     <body>
-        <div class="h-12 items-center justify-center flex bg-gray-900 text-gray-100 font-bold text-lg"><p>Heat Simulator</p></div>
         <main></main>
         <script src="sketch.js"></script>
-        <div class="absolute bottom-0 items-stretch flex h-48 w-screen justify-between bg-gray-300 p-4">
+        <div
+            class="absolute bottom-0 flex h-48 w-screen items-stretch justify-between bg-gray-300 p-4"
+        >
             <div class="flex flex-col">
-                <p class="pb-2 font-bold text-lg">Materials</p>
-                <div id="materialButtons" class="grow grid gap-2 grid-cols-3 w-80">
-                </div>
+                <p class="pb-2 text-lg font-bold">Materials</p>
+                <div id="materialButtons" class="grid w-80 grow grid-cols-3 gap-2"></div>
             </div>
             <div class="flex flex-col">
-                <p class="pb-2 font-bold text-lg">Tools</p>
+                <p class="pb-2 text-lg font-bold">Tools</p>
             </div>
         </div>
     </body>
