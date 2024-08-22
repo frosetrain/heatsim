@@ -4,6 +4,7 @@ let startX = 0;
 let startY = 0;
 let selectedMaterial = 0;
 let materialButtons = [];
+let selecting = false;
 let occupied = [];
 let drawing = false;
 let cursorX = 0;
@@ -49,6 +50,13 @@ function setup() {
         occupied.push(false);
     }
 
+    let cursorButton = new p5.Element(document.getElementById("cursorButton"));
+    const callback = () => {
+        selecting = true;
+        materialButtons[selectedMaterial].removeClass("ring");
+        cursorButton.addClass("ring");
+    };
+    cursorButton.mouseClicked(callback);
     let materialButtonsDiv = new p5.Element(document.getElementById("materialButtons"));
     for (const [index, material] of materials.entries()) {
         btn = createButton(material.name);
@@ -59,7 +67,9 @@ function setup() {
             btn.addClass("ring");
         }
         const callback = () => {
+            selecting = false;
             materialButtons[selectedMaterial].removeClass("ring");
+            cursorButton.removeClass("ring");
             selectedMaterial = index;
             materialButtons[selectedMaterial].addClass("ring");
         };
@@ -93,28 +103,41 @@ function mouseMoved(event) {
     if (x >= xCols || y >= yRows) {
         return;
     }
-    if (occupied[y * xCols + x]) {
-        cursor("not-allowed");
+    if (!selecting) {
+        if (occupied[y * xCols + x]) {
+            cursor("not-allowed");
+        } else {
+            cursor(CROSS);
+        }
     } else {
-        cursor(CROSS);
+        cursor(ARROW);
     }
 }
 
 function mousePressed(event) {
-    x = round(event.x / 24);
-    y = round(event.y / 24);
-    if (x >= xCols || y >= yRows) {
-        return;
-    }
-    if (!occupied[y * xCols + x]) {
-        drawing = true;
-        startX = x;
-        startY = y;
+    if (selecting) {
+        x = floor(event.x / 24);
+        y = floor(event.y / 24);
+        if (x >= xCols || y >= yRows) {
+            return;
+        }
+        console.log(x, y);
+    } else {
+        x = round(event.x / 24);
+        y = round(event.y / 24);
+        if (x >= xCols || y >= yRows) {
+            return;
+        }
+        if (!occupied[y * xCols + x]) {
+            drawing = true;
+            startX = x;
+            startY = y;
+        }
     }
 }
 
 function mouseDragged(event) {
-    if (!drawing) return;
+    if (!drawing || selecting) return;
     draw();
     x = round(event.x / 24);
     y = round(event.y / 24);
@@ -143,6 +166,7 @@ function mouseDragged(event) {
 }
 
 function mouseReleased(event) {
+    if (selecting) return;
     x = round(event.x / 24);
     y = round(event.y / 24);
     if (x >= xCols || y >= yRows) {
