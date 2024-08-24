@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="16"
+   height="16"
+   fill="currentColor"
+   class="bi bi-fire"
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="fire.svg"
+   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="37.25"
+     inkscape:cx="6.9127517"
+     inkscape:cy="8.7785235"
+     inkscape:window-width="1440"
+     inkscape:window-height="888"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <path
+     d="M 9,7 C 7.5000015,7.2499997 6.6250004,9.2500013 7,10.5 7,10.5 6.1250001,9.9999993 6.25,9.25 5.250001,10.249999 5,11.500001 5,12.25 5,13.999998 6.3430017,15 8,15 9.6569983,15 11,13.999998 11,12.25 11,11.364001 10.624999,10.5 10,10 8.7500013,9.000001 8.8210002,7.999999 9,7 Z"
+     style="fill:#fbbf24"
+     id="path4" />
+  <path
+     d="M 6,0 C 6.3569996,1.999998 6.4999975,4.000002 4,6 2.7500013,6.999999 2,8.7290018 2,10.5 2,13.999997 4.6860033,16 8,16 c 3.313997,0 6,-2.000003 6,-5.5 0,-1.4999985 -0.500002,-4.000002 -2.5,-6 0.25,1.4999985 -1.25,2 -1.25,2 C 10.999999,4.0000025 8.999997,0.4999995 6,0 Z m 3,7 c -0.1789998,0.999999 -0.2499987,2.000001 1,3 0.624999,0.5 1,1.364001 1,2.25 C 11,13.999998 9.6569983,15 8,15 6.3430017,15 5,13.999998 5,12.25 5,11.500001 5.250001,10.249999 6.25,9.25 6.1250001,9.9999993 7,10.5 7,10.5 6.6250004,9.2500013 7.5000015,7.2499997 9,7 Z"
+     style="fill:#f97316"
+     id="path3" />
+</svg>

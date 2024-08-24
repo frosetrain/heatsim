@@ -1,14 +1,20 @@
+"use strict";
+
 let logo;
 let blocks = [];
-let startX = 0;
-let startY = 0;
-let selectedMaterial = 0;
+let startX;
+let startY;
+let selected = 0;
+let selectedCategory = 0; // materials, heat sources, tools
 let materialButtons = [];
-let selecting = false;
+let heatSourceButtons = [];
+let toolButtons = [];
 let occupied = [];
 let drawing = false;
-let cursorX = 0;
-let cursorY = 0;
+let cursorX;
+let cursorY;
+let xCols;
+let yRows;
 
 class Material {
     constructor(name, color) {
@@ -50,31 +56,58 @@ function setup() {
         occupied.push(false);
     }
 
-    let cursorButton = new p5.Element(document.getElementById("cursorButton"));
-    const callback = () => {
-        selecting = true;
-        materialButtons[selectedMaterial].removeClass("ring");
-        cursorButton.addClass("ring");
-    };
-    cursorButton.mouseClicked(callback);
+    // Add material buttons
     let materialButtonsDiv = new p5.Element(document.getElementById("materialButtons"));
-    for (const [index, material] of materials.entries()) {
-        btn = createButton(material.name);
-        btn.class("ring-red-600 rounded");
+    for (let [i, material] of materials.entries()) {
+        let btn = createButton(material.name);
+        btn.class("ring-red-500 rounded shadow-lg");
         btn.style("background-color", material.color);
         btn.parent(materialButtonsDiv);
-        if (index == selectedMaterial) {
+        if (i === selected) {
             btn.addClass("ring");
         }
-        const callback = () => {
-            selecting = false;
-            materialButtons[selectedMaterial].removeClass("ring");
-            cursorButton.removeClass("ring");
-            selectedMaterial = index;
-            materialButtons[selectedMaterial].addClass("ring");
+        let callback = () => {
+            selectedCategory = 0;
+            selected = i;
+            for (let otherBtn of [...materialButtons, ...heatSourceButtons, ...toolButtons]) {
+                otherBtn.removeClass("ring");
+            }
+            btn.addClass("ring");
         };
         btn.mouseClicked(callback);
         materialButtons.push(btn);
+    }
+
+    // Add heat source buttons
+    let heatSourceButtonsDiv = Array.from(document.getElementById("heatSourceButtons").children);
+    for (let [i, button] of heatSourceButtonsDiv.entries()) {
+        let btn = new p5.Element(button);
+        let callback = () => {
+            selectedCategory = 1;
+            selected = i;
+            for (let otherBtn of [...materialButtons, ...heatSourceButtons, ...toolButtons]) {
+                otherBtn.removeClass("ring");
+            }
+            btn.addClass("ring");
+        };
+        btn.mouseClicked(callback);
+        heatSourceButtons.push(btn);
+    }
+
+    // Add tool buttons
+    let toolButtonsDiv = Array.from(document.getElementById("toolButtons").children);
+    for (let [i, button] of toolButtonsDiv.entries()) {
+        let btn = new p5.Element(button);
+        let callback = () => {
+            selectedCategory = 2;
+            selected = i;
+            for (let otherBtn of [...materialButtons, ...heatSourceButtons, ...toolButtons]) {
+                otherBtn.removeClass("ring");
+            }
+            btn.addClass("ring");
+        };
+        btn.mouseClicked(callback);
+        toolButtons.push(btn);
     }
 }
 
@@ -98,12 +131,12 @@ function draw() {
 }
 
 function mouseMoved(event) {
-    x = floor(event.x / 24);
-    y = floor(event.y / 24);
+    let x = floor(event.x / 24);
+    let y = floor(event.y / 24);
     if (x >= xCols || y >= yRows) {
         return;
     }
-    if (!selecting) {
+    if (selectedCategory === 0) {
         if (occupied[y * xCols + x]) {
             cursor("not-allowed");
         } else {
@@ -115,16 +148,9 @@ function mouseMoved(event) {
 }
 
 function mousePressed(event) {
-    if (selecting) {
-        x = floor(event.x / 24);
-        y = floor(event.y / 24);
-        if (x >= xCols || y >= yRows) {
-            return;
-        }
-        console.log(x, y);
-    } else {
-        x = round(event.x / 24);
-        y = round(event.y / 24);
+    if (selectedCategory === 0) {
+        let x = round(event.x / 24);
+        let y = round(event.y / 24);
         if (x >= xCols || y >= yRows) {
             return;
         }
@@ -133,18 +159,25 @@ function mousePressed(event) {
             startX = x;
             startY = y;
         }
+    } else {
+        let x = floor(event.x / 24);
+        let y = floor(event.y / 24);
+        if (x >= xCols || y >= yRows) {
+            return;
+        }
+        console.log(x, y);
     }
 }
 
 function mouseDragged(event) {
-    if (!drawing || selecting) return;
+    if (selectedCategory !== 0 || !drawing) return;
     draw();
-    x = round(event.x / 24);
-    y = round(event.y / 24);
+    let x = round(event.x / 24);
+    let y = round(event.y / 24);
     if (x >= xCols || y >= yRows) {
         return;
     }
-    good = true;
+    let good = true;
     for (let uy = min(startY, y); uy < max(startY, y); ++uy) {
         for (let ux = min(startX, x); ux < max(startX, x); ++ux) {
             if (occupied[uy * xCols + ux]) {
@@ -166,14 +199,14 @@ function mouseDragged(event) {
 }
 
 function mouseReleased(event) {
-    if (selecting) return;
-    x = round(event.x / 24);
-    y = round(event.y / 24);
+    if (selectedCategory !== 0) return;
+    let x = round(event.x / 24);
+    let y = round(event.y / 24);
     if (x >= xCols || y >= yRows) {
         return;
     }
     drawing = false;
-    blocks.push(new Block(startX, startY, cursorX, cursorY, materials[selectedMaterial])); // cursorX and cursorY will become grid coordinates soon
+    blocks.push(new Block(startX, startY, cursorX, cursorY, materials[selected])); // cursorX and cursorY will become grid coordinates soon
     for (let uy = min(startY, cursorY); uy < max(startY, cursorY); ++uy) {
         for (let ux = min(startX, cursorX); ux < max(startX, cursorX); ++ux) {
             occupied[uy * xCols + ux] = true;
