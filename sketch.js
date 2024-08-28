@@ -5,10 +5,12 @@ let blocks = [];
 let startX;
 let startY;
 let selected = 0;
-let selectedCategory = 0; // materials, heat sources, tools
+let selectedCategory = 0; // materials, heat sources, controls
 let materialButtons = [];
 let heatSourceButtons = [];
-let toolButtons = [];
+let controlButtons = [];
+let mouseFollowDiv;
+let placedHeatSources = [];
 let occupied = [];
 let drawing = false;
 let cursorX;
@@ -36,6 +38,19 @@ class Block {
         rectMode(CORNERS);
         fill(this.material.color);
         rect(this.x1 * 24, this.y1 * 24, this.x2 * 24, this.y2 * 24);
+    }
+}
+
+class HeatSource {
+    constructor(x, y, type, elt) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.elt = elt;
+    }
+
+    display() {
+        this.elt.show();
     }
 }
 
@@ -69,7 +84,7 @@ function setup() {
         let callback = () => {
             selectedCategory = 0;
             selected = i;
-            for (let otherBtn of [...materialButtons, ...heatSourceButtons, ...toolButtons]) {
+            for (let otherBtn of [...materialButtons, ...heatSourceButtons, ...controlButtons]) {
                 otherBtn.removeClass("ring");
             }
             btn.addClass("ring");
@@ -78,14 +93,24 @@ function setup() {
         materialButtons.push(btn);
     }
 
+    mouseFollowDiv = createDiv();
     // Add heat source buttons
     let heatSourceButtonsDiv = Array.from(document.getElementById("heatSourceButtons").children);
     for (let [i, button] of heatSourceButtonsDiv.entries()) {
         let btn = new p5.Element(button);
+        let clone = Array.from(button.children)[0].cloneNode(true);
+        clone.setAttribute("width", 40);
+        clone.setAttribute("height", 40);
+        let clonedIcon = new p5.Element(clone);
+        clonedIcon.parent(mouseFollowDiv);
+        let tooltipP = createP("Click to place");
+        tooltipP.class("text-xs");
+        tooltipP.parent(mouseFollowDiv);
+
         let callback = () => {
             selectedCategory = 1;
             selected = i;
-            for (let otherBtn of [...materialButtons, ...heatSourceButtons, ...toolButtons]) {
+            for (let otherBtn of [...materialButtons, ...heatSourceButtons, ...controlButtons]) {
                 otherBtn.removeClass("ring");
             }
             btn.addClass("ring");
@@ -94,20 +119,20 @@ function setup() {
         heatSourceButtons.push(btn);
     }
 
-    // Add tool buttons
-    let toolButtonsDiv = Array.from(document.getElementById("toolButtons").children);
-    for (let [i, button] of toolButtonsDiv.entries()) {
+    // Add control buttons
+    let controlButtonsDiv = Array.from(document.getElementById("controlButtons").children);
+    for (let [i, button] of controlButtonsDiv.entries()) {
         let btn = new p5.Element(button);
         let callback = () => {
             selectedCategory = 2;
             selected = i;
-            for (let otherBtn of [...materialButtons, ...heatSourceButtons, ...toolButtons]) {
+            for (let otherBtn of [...materialButtons, ...heatSourceButtons, ...controlButtons]) {
                 otherBtn.removeClass("ring");
             }
             btn.addClass("ring");
         };
         btn.mouseClicked(callback);
-        toolButtons.push(btn);
+        controlButtons.push(btn);
     }
 }
 
@@ -131,13 +156,15 @@ function draw() {
 }
 
 function mouseMoved(event) {
-    let x = floor(event.x / 24);
-    let y = floor(event.y / 24);
-    if (x >= xCols || y >= yRows) {
+    let fx = floor(event.x / 24);
+    let fy = floor(event.y / 24);
+    let rx = round(event.x / 24);
+    let ry = round(event.y / 24);
+    if (fx >= xCols || fy >= yRows) {
         return;
     }
     if (selectedCategory === 0) {
-        if (occupied[y * xCols + x]) {
+        if (occupied[fy * xCols + fx]) {
             cursor("not-allowed");
         } else {
             cursor(CROSS);
@@ -145,41 +172,53 @@ function mouseMoved(event) {
     } else {
         cursor(ARROW);
     }
+
+    if (selectedCategory === 1) {
+        mouseFollowDiv.position(rx * 24 - 20, ry * 24 - 20);
+    }
 }
 
 function mousePressed(event) {
+    let fx = floor(event.x / 24);
+    let fy = floor(event.y / 24);
+    let rx = round(event.x / 24);
+    let ry = round(event.y / 24);
+    if (fx >= xCols || fy >= yRows) {
+        return;
+    }
     if (selectedCategory === 0) {
-        let x = round(event.x / 24);
-        let y = round(event.y / 24);
-        if (x >= xCols || y >= yRows) {
-            return;
-        }
-        if (!occupied[y * xCols + x]) {
+        if (!occupied[ry * xCols + rx]) {
             drawing = true;
-            startX = x;
-            startY = y;
+            startX = rx;
+            startY = ry;
         }
+    } else if (selectedCategory === 1) {
+        let button = document.getElementById(`heatSource${selected}`).cloneNode(true);
+        button.setAttribute("width", 40);
+        button.setAttribute("height", 40);
+        let clone = new p5.Element(button);
+        let container = createDiv();
+        container.position(rx * 24 - 20, ry * 24 - 20);
+        container.child(clone);
+        placedHeatSources.push(new HeatSource(rx, ry, selected, clone));
+        console.log(placedHeatSources);
     } else {
-        let x = floor(event.x / 24);
-        let y = floor(event.y / 24);
-        if (x >= xCols || y >= yRows) {
-            return;
-        }
-        console.log(x, y);
     }
 }
 
 function mouseDragged(event) {
     if (selectedCategory !== 0 || !drawing) return;
     draw();
-    let x = round(event.x / 24);
-    let y = round(event.y / 24);
-    if (x >= xCols || y >= yRows) {
+    let fx = floor(event.x / 24);
+    let fy = floor(event.y / 24);
+    let rx = round(event.x / 24);
+    let ry = round(event.y / 24);
+    if (fx >= xCols || fy >= yRows) {
         return;
     }
     let good = true;
-    for (let uy = min(startY, y); uy < max(startY, y); ++uy) {
-        for (let ux = min(startX, x); ux < max(startX, x); ++ux) {
+    for (let uy = min(startY, ry); uy < max(startY, ry); ++uy) {
+        for (let ux = min(startX, rx); ux < max(startX, rx); ++ux) {
             if (occupied[uy * xCols + ux]) {
                 good = false;
                 break;
@@ -188,8 +227,8 @@ function mouseDragged(event) {
         if (!good) break;
     }
     if (good) {
-        cursorX = x;
-        cursorY = y;
+        cursorX = rx;
+        cursorY = ry;
     }
     rectMode(CORNERS);
     noFill();
@@ -200,9 +239,11 @@ function mouseDragged(event) {
 
 function mouseReleased(event) {
     if (selectedCategory !== 0) return;
-    let x = round(event.x / 24);
-    let y = round(event.y / 24);
-    if (x >= xCols || y >= yRows) {
+    let fx = floor(event.x / 24);
+    let fy = floor(event.y / 24);
+    let rx = round(event.x / 24);
+    let ry = round(event.y / 24);
+    if (fx >= xCols || fy >= yRows) {
         return;
     }
     drawing = false;

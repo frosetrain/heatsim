@@ -1,10 +1,10 @@
-Tools
------
-Select mode for choosing initial temperature and deleting stuff
-Heat sources
+## Tools
 
-Controls
---------
-Play/pause
-Temperature/material color
-Show arrows and particles
+### In Edit Mode
+Select mode for choosing initial temperature and deleting stuff
+
+### In Simulation Mode
+Thermometer to see the temperature of a thing
+Visualise temperature - fill each blocks with a color based on its temperature
+Show transfer arrows
+Speed (maybe)
