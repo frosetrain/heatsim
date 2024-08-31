@@ -12,11 +12,11 @@
             class="absolute bottom-0 flex h-48 w-screen items-stretch justify-between bg-gray-300 p-4"
         >
             <div class="flex flex-col">
-                <p class="pb-2 text-lg font-bold">Materials</p>
+                <p class="w-min animate-ping pb-2 text-lg font-bold">Materials</p>
                 <div id="materialButtons" class="grid w-80 grow grid-cols-3 gap-2"></div>
             </div>
             <div>
-                <p class="pb-2 text-lg font-bold">Heat Sources</p>
+                <p class="pb-2 text-lg font-bold">Fire</p>
                 <div id="heatSourceButtons" class="flex gap-2">
                     <button class="m-0.5 rounded-full bg-gray-200 p-2 shadow-lg ring-red-500">
                         <img
@@ -44,18 +44,24 @@
                     </button>
                 </div>
             </div>
-            <div class="flex flex-col items-center">
-                <p class="text-sm">200K</p>
-                <div class="h-3.5 w-3.5 bg-[#000004]"></div>
-                <div class="h-3.5 w-3.5 bg-[#1f0c48]"></div>
-                <div class="h-3.5 w-3.5 bg-[#550f6d]"></div>
-                <div class="h-3.5 w-3.5 bg-[#88226a]"></div>
-                <div class="h-3.5 w-3.5 bg-[#ba3655]"></div>
-                <div class="h-3.5 w-3.5 bg-[#e35933]"></div>
-                <div class="h-3.5 w-3.5 bg-[#f98c0a]"></div>
-                <div class="h-3.5 w-3.5 bg-[#f9c932]"></div>
-                <div class="h-3.5 w-3.5 bg-[#fcffa4]"></div>
-                <p class="text-sm">400K</p>
+            <div>
+                <div class="mb-4 mt-2 flex animate-pulse">
+                    <p class="mr-2 text-sm">200K</p>
+                    <div class="h-3.5 w-3.5 bg-[#000004]"></div>
+                    <div class="h-3.5 w-3.5 bg-[#1f0c48]"></div>
+                    <div class="h-3.5 w-3.5 bg-[#550f6d]"></div>
+                    <div class="h-3.5 w-3.5 bg-[#88226a]"></div>
+                    <div class="h-3.5 w-3.5 bg-[#ba3655]"></div>
+                    <div class="h-3.5 w-3.5 bg-[#e35933]"></div>
+                    <div class="h-3.5 w-3.5 bg-[#f98c0a]"></div>
+                    <div class="h-3.5 w-3.5 bg-[#f9c932]"></div>
+                    <div class="h-3.5 w-3.5 bg-[#fcffa4]"></div>
+                    <p class="ml-2 text-sm">400K</p>
+                </div>
+                <div id="blockMenu" class="w-min rounded bg-gray-300 p-2">
+                    <input id="tempSlider" type="range" min="200" max="400" />
+                    <p id="tempLabel" class="text-sm">400.00 K</p>
+                </div>
             </div>
             <div class="flex flex-col">
                 <p class="pb-2 text-lg font-bold">Toggles</p>
@@ -92,10 +98,18 @@
                     </button>
                 </div>
                 <!-- Play/pause button -->
-                <button
-                    id="playPauseButton"
-                    class="m-0.5 mt-4 flex animate-bounce justify-center rounded-md bg-blue-400 p-3 shadow-lg"
-                ></button>
+                <div class="m-0.5 mt-4 flex justify-center gap-2">
+                    <button
+                        id="playPauseButton"
+                        class="animate-bounce justify-center rounded-md bg-blue-600 p-3 text-white shadow-lg"
+                    ></button>
+                    <button
+                        id="clearButton"
+                        class="animate-spin rounded-md bg-red-600 px-3 font-bold text-white"
+                    >
+                        Clear
+                    </button>
+                </div>
             </div>
         </div>
     </body>

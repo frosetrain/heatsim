@@ -1,26 +1,27 @@
 "use strict";
 
-let logo;
+let xCols;
+let yRows;
 let blocks = [];
 let startX;
 let startY;
 let selected = 0;
 let selectedCategory = 0; // materials, heat sources, tools
+let selectedBlock;
 let materialButtons = [];
 let heatSourceButtons = [];
 let toolButtons = [];
-let toggleButtons = [];
 let togglesToggled = [];
 let mouseFollowDiv;
-let playPauseButton;
+let tempSlider;
+let blockMenu;
+let tempLabel;
 let simulating = false;
 let placedHeatSources = [];
 let occupied = [];
 let drawing = false;
 let cursorX;
 let cursorY;
-let xCols;
-let yRows;
 
 const playSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
   <path fill-rule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clip-rule="evenodd" />
@@ -51,17 +52,17 @@ class Material {
 
 class Block {
     constructor(x1, y1, x2, y2, material) {
-        this.x1 = x1;
-        this.y1 = y1;
-        this.x2 = x2;
-        this.y2 = y2;
+        this.x1 = min(x1, x2);
+        this.y1 = min(y1, y2);
+        this.x2 = max(x1, x2);
+        this.y2 = max(y1, y2);
         this.width = abs(x2 - x1);
         this.height = abs(y2 - y1);
         this.material = material;
         this.initialTemp = random(200, 400);
         // this.initialTemp = 298.15;
         this.temps = [];
-        this.tempChange = [];
+        this.energyChange = [];
         for (let x = 0; x < this.width; ++x) {
             let row = [];
             let changeRow = [];
@@ -70,7 +71,7 @@ class Block {
                 changeRow.push(0);
             }
             this.temps.push(row);
-            this.tempChange.push(changeRow);
+            this.energyChange.push(changeRow);
         }
     }
 
@@ -78,7 +79,6 @@ class Block {
         rectMode(CORNERS);
         strokeWeight(0);
         if (togglesToggled[1]) {
-            // Draw dots to show temperature
             for (let y = 0; y < this.height; ++y) {
                 for (let x = 0; x < this.width; ++x) {
                     fill(tempToColor(this.temps[x][y]));
@@ -93,6 +93,14 @@ class Block {
         } else {
             fill(this.material.color);
             rect(this.x1 * 24, this.y1 * 24, this.x2 * 24, this.y2 * 24);
+        }
+    }
+
+    resetTemp() {
+        for (let y = 0; y < this.height; ++y) {
+            for (let x = 0; x < this.width; ++x) {
+                this.temps[x][y] = this.initialTemp;
+            }
         }
     }
 }
@@ -111,12 +119,12 @@ class HeatSource {
 }
 
 const materials = [
-    new Material("Air", "#bae6fd", 1003.5, 0.02624),
-    new Material("Water", "#3b82f6", 4181.6, 0.59803),
-    new Material("SUS304 Steel", "#64748b", 500, 16.2),
-    new Material("60Sn-40Pb Solder", "#78716c", 173, 49.8),
-    new Material("Balsa Wood", "#a16207", 1360, 0.048),
-    new Material("ABS Plastic", "#22c55e", 1940, 0.155),
+    new Material("Air", "#bae6fd", 1003.5, 2.624),
+    new Material("Water", "#3b82f6", 4181.6, 5.9803),
+    new Material("SUS304 Steel", "#64748b", 1000, 12.2),
+    new Material("60Sn-40Pb Solder", "#78716c", 865, 20.8),
+    new Material("Balsa Wood", "#a16207", 1360, 1.48),
+    new Material("ABS Plastic", "#22c55e", 1940, 1.75),
 ];
 
 function tempToColor(temperature) {
@@ -159,6 +167,7 @@ function setup() {
         }
         let callback = () => {
             mouseFollowDiv.hide();
+            blockMenu.hide();
             selectedCategory = 0;
             selected = i;
             for (let otherBtn of [...materialButtons, ...heatSourceButtons, ...toolButtons]) {
@@ -186,6 +195,7 @@ function setup() {
         tooltipP.parent(mouseFollowDiv);
 
         let callback = () => {
+            blockMenu.hide();
             mouseFollowDiv.show();
             selectedCategory = 1;
             selected = i;
@@ -215,6 +225,13 @@ function setup() {
         toolButtons.push(btn);
     }
 
+    // Add select menu
+    blockMenu = new p5.Element(document.getElementById("blockMenu"));
+    blockMenu.hide();
+    tempSlider = new p5.Element(document.getElementById("tempSlider"));
+    tempSlider.mouseMoved(changeInitialTemp);
+    tempLabel = new p5.Element(document.getElementById("tempLabel"));
+
     // Add toggles
     let togglesDiv = Array.from(document.getElementById("toggles").children);
     for (let [i, button] of togglesDiv.entries()) {
@@ -233,26 +250,52 @@ function setup() {
             draw();
         };
         btn.mouseClicked(callback);
-        toggleButtons.push(btn);
     }
 
     // Add play/pause button
-    playPauseButton = new p5.Element(document.getElementById("playPauseButton"));
+    let playPauseButton = new p5.Element(document.getElementById("playPauseButton"));
     playPauseButton.html(playSvg);
     let callback = () => {
+        blockMenu.hide();
+        mouseFollowDiv.hide();
         if (simulating) {
             simulating = false;
             noLoop();
             playPauseButton.html(playSvg);
+            for (let block of blocks) {
+                block.resetTemp();
+            }
         } else {
             simulating = true;
-            console.log(isLooping());
             loop();
             playPauseButton.html(pauseSvg);
             cursor(ARROW);
         }
     };
     playPauseButton.mouseClicked(callback);
+
+    let clearButton = new p5.Element(document.getElementById("clearButton"));
+    callback = () => {
+        blocks = [];
+        simulating = false;
+        drawing = false;
+        playPauseButton.html(playSvg);
+        for (let heatSource of placedHeatSources) {
+            heatSource.elt.hide();
+        }
+        placedHeatSources = [];
+        occupied = [];
+        for (let x = 0; x < xCols; ++x) {
+            let row = [];
+            for (let y = 0; y < yRows; ++y) {
+                row.push(false);
+            }
+            occupied.push(row);
+        }
+        noLoop();
+        draw();
+    };
+    clearButton.mouseClicked(callback);
 }
 
 function heatTransfer() {
@@ -267,36 +310,70 @@ function heatTransfer() {
             for (let t of targets) {
                 let targetX = t[0];
                 let targetY = t[1];
-                if (targetX >= xCols || targetY >= yRows) {
+                if (targetX < 0 || targetY < 0 || targetX >= xCols || targetY >= yRows) {
                     continue;
                 }
                 if (occupied[x][y] && occupied[targetX][targetY]) {
-                    console.log("hi");
                     let currentBlock = blocks[occupied[x][y] - 1];
                     let targetBlock = blocks[occupied[targetX][targetY] - 1];
-                    let currentX = x - currentBlock.x1;
-                    let currentY = y - currentBlock.y1;
-                    let targetAbsX = targetX - targetBlock.x1;
-                    let targetAbsY = targetY - targetBlock.y1;
+                    let currentRelX = x - currentBlock.x1;
+                    let currentRelY = y - currentBlock.y1;
+                    let targetRelX = targetX - targetBlock.x1;
+                    let targetRelY = targetY - targetBlock.y1;
                     if (
-                        currentBlock.temps[currentX][currentY] >
-                        targetBlock.temps[targetAbsX][targetAbsY]
+                        currentBlock.temps[currentRelX][currentRelY] >
+                        targetBlock.temps[targetRelX][targetRelY]
                     ) {
+                        let multiplier = 1;
+                        if (
+                            ["Water", "Air"].includes(currentBlock.material.name) &&
+                            ["Water", "Air"].includes(targetBlock.material.name)
+                        ) {
+                            // Simulate convection
+                            if (currentRelY - targetRelY === 1) {
+                                multiplier = 10;
+                            } else if (
+                                abs(currentRelX - targetRelX) === 1 &&
+                                currentRelY <= ceil(currentBlock.height * 0.2)
+                            ) {
+                                multiplier = 10;
+                            }
+                        }
+                        // q = -k Delta t
                         let diff =
-                            currentBlock.temps[currentX][currentY] -
-                            targetBlock.temps[targetAbsX][targetAbsY];
-                        targetBlock.tempChange[targetAbsX][targetAbsY] += diff / 4;
-                        currentBlock.tempChange[currentX][currentY] -= diff / 4;
+                            currentBlock.temps[currentRelX][currentRelY] -
+                            targetBlock.temps[targetRelX][targetRelY];
+                        let heatFlux =
+                            ((currentBlock.material.tc + targetBlock.material.tc) / 2) *
+                            (diff / 0.24); // 0.24 is the distance between tiles in m
+                        heatFlux *= multiplier;
+                        targetBlock.energyChange[targetRelX][targetRelY] += heatFlux;
+                        currentBlock.energyChange[currentRelX][currentRelY] -= heatFlux;
                     }
                 }
             }
         }
     }
+
+    // Apply heat sources
+    for (let heatSource of placedHeatSources) {
+        let heatedBlock = blocks[occupied[heatSource.x][heatSource.y] - 1];
+        let relX = heatSource.x - heatedBlock.x1;
+        let relY = heatSource.y - heatedBlock.y1;
+        heatedBlock.energyChange[relX][relY] += 100000;
+    }
+
     for (let block of blocks) {
         for (let y = 0; y < block.height; ++y) {
             for (let x = 0; x < block.width; ++x) {
-                block.temps[x][y] += block.tempChange[x][y];
-                block.tempChange[x][y] = 0;
+                let tempChange = (block.energyChange[x][y] / block.material.shc) * 2;
+                block.temps[x][y] += tempChange;
+                if (block.temps[x][y] > 400) {
+                    block.temps[x][y] = 400;
+                } else if (block.temps[x][y] < 200) {
+                    block.temps[x][y] = 200;
+                }
+                block.energyChange[x][y] = 0;
             }
         }
     }
@@ -304,7 +381,7 @@ function heatTransfer() {
 
 function draw() {
     rectMode(CORNER);
-    background(240);
+    background("#f3f4f6");
     strokeWeight(0);
 
     // Draw the dot grid
@@ -319,11 +396,40 @@ function draw() {
     }
     if (simulating) {
         heatTransfer();
+        if (togglesToggled[0]) {
+            let fx = floor(mouseX / 24);
+            let fy = floor(mouseY / 24);
+            if (fx >= xCols || fy >= yRows) {
+                return;
+            }
+            rectMode(CORNER);
+            fill("#d1d5dbaa");
+            rect(mouseX, mouseY - 24, 67, 24);
+            fill(0);
+            textAlign(LEFT, BOTTOM);
+            textSize(16);
+            textFont("CommitMono");
+            let currentBlock = blocks[occupied[fx][fy] - 1];
+            if (!currentBlock) {
+                text("null", mouseX + 4, mouseY - 4);
+                return;
+            }
+            let currentX = fx - currentBlock.x1;
+            let currentY = fy - currentBlock.y1;
+            let temp = currentBlock.temps[currentX][currentY];
+            text((Math.round(temp * 100) / 100).toFixed(2), mouseX + 4, mouseY - 4);
+        }
     }
 }
 
+function changeInitialTemp() {
+    selectedBlock.initialTemp = tempSlider.value();
+    selectedBlock.resetTemp();
+    tempLabel.html(`${(Math.round(tempSlider.value() * 100) / 100).toFixed(2)} K`);
+    draw();
+}
+
 function mouseMoved(event) {
-    if (simulating) return;
     let fx = floor(event.x / 24);
     let fy = floor(event.y / 24);
     let rx = round(event.x / 24);
@@ -331,7 +437,7 @@ function mouseMoved(event) {
     if (fx >= xCols || fy >= yRows) {
         return;
     }
-    if (selectedCategory === 0) {
+    if (!simulating && selectedCategory === 0) {
         if (occupied[fx][fy]) {
             cursor("not-allowed");
         } else {
@@ -370,8 +476,15 @@ function mousePressed(event) {
         container.position(rx * 24 - 20, ry * 24 - 20);
         container.child(clone);
         placedHeatSources.push(new HeatSource(rx, ry, selected, clone));
-        console.log(placedHeatSources);
-    } else {
+    } else if (selectedCategory === 2) {
+        selectedBlock = blocks[occupied[fx][fy] - 1];
+        if (selectedBlock) {
+            blockMenu.show();
+            tempSlider.value(selectedBlock.initialTemp);
+            changeInitialTemp();
+        } else {
+            blockMenu.hide();
+        }
     }
 }
 
@@ -382,18 +495,20 @@ function mouseDragged(event) {
     let fy = floor(event.y / 24);
     let rx = round(event.x / 24);
     let ry = round(event.y / 24);
-    if (fx >= xCols || fy >= yRows) {
-        return;
-    }
     let good = true;
-    for (let uy = min(startY, ry); uy < max(startY, ry); ++uy) {
-        for (let ux = min(startX, rx); ux < max(startX, rx); ++ux) {
-            if (occupied[ux][uy]) {
-                good = false;
-                break;
+    if (fx >= xCols || fy >= yRows) {
+        good = false;
+    }
+    if (good) {
+        for (let uy = min(startY, ry); uy < max(startY, ry); ++uy) {
+            for (let ux = min(startX, rx); ux < max(startX, rx); ++ux) {
+                if (occupied[ux][uy]) {
+                    good = false;
+                    break;
+                }
             }
+            if (!good) break;
         }
-        if (!good) break;
     }
     if (good) {
         cursorX = rx;
