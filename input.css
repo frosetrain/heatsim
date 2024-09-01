@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+    font-family: CommitMono;
+    src: url("assets/CommitMonoV143-VF.woff2");
+}

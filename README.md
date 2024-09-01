@@ -20,4 +20,7 @@ Speed (maybe)
 - [x] Make select tool
 - [x] Add fake convection
 - [ ] Add radiation
-- [ ] Write notion
+- [x] Walkthrough
+- [x] Display shc and tc in block menu
+- [x] Outline selected block
+- [x] Write Notion
